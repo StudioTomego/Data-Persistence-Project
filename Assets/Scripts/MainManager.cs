@@ -3,22 +3,24 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using UnityEditor;
+using System.IO;
 
 public class MainManager : MonoBehaviour
 {
+    public static MainManager Instance;
+
     public Brick BrickPrefab;
     public int LineCount = 6;
     public Rigidbody Ball;
 
     public Text ScoreText;
+    public Text bestScoreText;
     public GameObject GameOverText;
     
-    private bool m_Started = false;
-    private int m_Points;
-    
+    private bool m_Started = false;    
     private bool m_GameOver = false;
 
-    
     // Start is called before the first frame update
     void Start()
     {
@@ -36,6 +38,29 @@ public class MainManager : MonoBehaviour
                 brick.onDestroyed.AddListener(AddPoint);
             }
         }
+
+        string path = Application.persistentDataPath + "/savefile.json";
+        if (File.Exists(path))
+        {
+            switch (Data.data.bestScoreName)
+
+            {
+                case "Enter Name":
+                    bestScoreText.text = "No High Score Yet!";
+                    break;
+
+                default:
+                    bestScoreText.text = Data.data.bestScoreName + "'s High Score " + Data.data.savedHighScore;
+                    break;
+            }
+        }
+        else
+        {
+            bestScoreText.text = "No High Score Yet!";
+        }
+
+        ScoreText.text = Data.data.name + "'s Score :" + Data.data.m_Points;
+
     }
 
     private void Update()
@@ -55,8 +80,15 @@ public class MainManager : MonoBehaviour
         }
         else if (m_GameOver)
         {
+            if(Data.data.m_Points > Data.data.savedHighScore)
+            {
+                Data.data.SaveHighScore();
+            }
+
             if (Input.GetKeyDown(KeyCode.Space))
             {
+                Data.data.ResetScore();
+                Data.data.LoadHighScore();
                 SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
             }
         }
@@ -64,8 +96,8 @@ public class MainManager : MonoBehaviour
 
     void AddPoint(int point)
     {
-        m_Points += point;
-        ScoreText.text = $"Score : {m_Points}";
+        Data.data.m_Points += point;
+        ScoreText.text = Data.data.name + "'s Score :" + Data.data.m_Points;
     }
 
     public void GameOver()
